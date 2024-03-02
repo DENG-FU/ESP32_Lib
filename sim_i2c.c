@@ -27,6 +27,9 @@ extern void    mcu_set_pin_value(uint8_t port, uint8_t pint, uint8_t level);
 #define MCU_SCL_1(port) mcu_set_pin_value(sim_i2c_pin[port].scl_port, sim_i2c_pin[port].scl_pin, 1)
 #define MCU_SCL_0(port) mcu_set_pin_value(sim_i2c_pin[port].scl_port, sim_i2c_pin[port].scl_pin, 0)
 
+#define SIM_I2C_PORT_CHECK(port, fail) { \
+    if (port >= CONFIG_SIM_I2C_MAX_PORT) return fail; \
+}
 
 static void i2c_delay(void)
 {
@@ -155,6 +158,8 @@ uint8_t sim_i2c_read_buf(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *buf, 
 {
     uint8_t i, ack;
 
+    SIM_I2C_PORT_CHECK(port, 1);
+
     i2c_start(port);
 
     do
@@ -189,6 +194,8 @@ uint8_t sim_i2c_write_buf(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *buf,
 {
     uint8_t i, ack;
 
+    SIM_I2C_PORT_CHECK(port, 1);
+
     i2c_start(port);
 
     ack = i2c_write_byte(port, addr & 0xFE);
@@ -222,7 +229,7 @@ bool sim_i2c_lock(uint8_t port)
 {
     TickType_t timeout;
 
-    SIM_I2C_PORT_CHECK(port);
+    SIM_I2C_PORT_CHECK(port, false);
 
     timeout = pdMS_TO_TICKS(CONFIG_SIM_I2C_LOCK_TIMEOUT);
 
@@ -239,6 +246,8 @@ bool sim_i2c_lock(uint8_t port)
 
 bool sim_i2c_unlock(uint8_t port)
 {
+    SIM_I2C_PORT_CHECK(port, false);
+
     return (xSemaphoreGive(sim_i2c_mutex[port], timeout)) == pdTRUE);
 }
 
@@ -254,6 +263,8 @@ uint8_t sim_i2c_read_buf_lock(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *
 {
     uint8_t nack = 1;
 
+    SIM_I2C_PORT_CHECK(port, 1);
+
     if (sim_i2c_lock(port))
     {
         nack = sim_i2c_read_buf(port, addr, reg, buf, len);
@@ -268,6 +279,8 @@ uint8_t sim_i2c_read_buf_lock(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *
 uint8_t sim_i2c_write_buf_lock(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t len)
 {
     uint8_t nack = 1;
+
+    SIM_I2C_PORT_CHECK(port, 1);
 
     if (sim_i2c_lock(port))
     {
