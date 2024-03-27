@@ -31,6 +31,11 @@ extern void    mcu_set_pin_value(uint8_t port, uint8_t pint, uint8_t level);
     if (port >= CONFIG_SIM_I2C_MAX_PORT) return fail; \
 }
 
+void sim_i2c_test(void)
+{
+    printf("sim i2c test.\n");
+}
+
 static void i2c_delay(void)
 {
     volatile uint16_t i = CONFIG_SIM_I2C_SPEED_DELAY;
@@ -79,7 +84,7 @@ static uint8_t i2c_write_byte(uint8_t port, uint8_t data)
             MCU_SDA_0(port);
         }
 
-        i2c_delay_half(port);
+        i2c_delay_half();
 
         MCU_SCL_1(port);
         i2c_delay();
@@ -93,7 +98,7 @@ static uint8_t i2c_write_byte(uint8_t port, uint8_t data)
     MCU_SCL_1(port);
     i2c_delay();
 
-    ack = MCU_SDA_R(prot) ? 1 : 0;
+    ack = MCU_SDA_R(port) ? 1 : 0;
     if (ack == 0)
         MCU_SDA_0(port);
 
@@ -206,7 +211,7 @@ uint8_t sim_i2c_write_buf(uint8_t port, uint8_t addr, uint8_t reg, uint8_t *buf,
 
         for(i = 0; i < len && (ack == 0); i++)
         {
-            ack = i2c_write_byte(*buf++);
+            ack = i2c_write_byte(port, *buf++);
         }
     }
 
@@ -240,7 +245,7 @@ bool sim_i2c_lock(uint8_t port)
     else
     {
         sim_i2c_force_unlock(port);
-        return (xSemaphoreTake(sim_i2c_mutex[port], timeout)) == pdTRUE);
+        return ((xSemaphoreTake(sim_i2c_mutex[port], timeout)) == pdTRUE);
     }
 }
 
@@ -248,7 +253,7 @@ bool sim_i2c_unlock(uint8_t port)
 {
     SIM_I2C_PORT_CHECK(port, false);
 
-    return (xSemaphoreGive(sim_i2c_mutex[port], timeout)) == pdTRUE);
+    return ((xSemaphoreGive(sim_i2c_mutex[port])) == pdTRUE);
 }
 
 // mutex and gpio contorl function config

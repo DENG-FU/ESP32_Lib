@@ -13,6 +13,7 @@
 #define CONFIG_SIM_I2C_LOCK_TIMEOUT 5000 // 5s
 #endif // CONFIG_SIM_I2C_LOCK_TIMEOUT
 
+#include "freertos/semphr.h"
 
 typedef struct 
 {
@@ -24,6 +25,7 @@ typedef struct
 
 }sim_i2c_pin_t;
 
+void sim_i2c_test(void);
 
 void    sim_i2c_init          (sim_i2c_pin_t *i2c_pin, SemaphoreHandle_t *i2c_mutex);
 bool    sim_i2c_lock          (uint8_t port);
